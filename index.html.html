@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>RVJ Bank Management System</title>
+<style>
+:root{--bg:#f6f8f7;--card:#fff;--tx:#14201a;--mut:#5b6b62;--ac:#0b7a3b;--ac2:#fff;--bd:#d5ded9;--err:#b3261e;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1512;--card:#18211c;--tx:#e8f0ec;--mut:#9bb0a5;--ac:#3ecf7a;--ac2:#08140d;--bd:#2a3830;--err:#ff8a80}}
+:root[data-theme="dark"]{--bg:#0f1512;--card:#18211c;--tx:#e8f0ec;--mut:#9bb0a5;--ac:#3ecf7a;--ac2:#08140d;--bd:#2a3830;--err:#ff8a80}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:720px;margin:0 auto;padding:20px 16px 40px}
+h1{font-size:1.4rem;margin:0 0 4px}
+.sub{color:var(--mut);margin:0 0 20px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:16px;margin-bottom:16px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+button{font:inherit;cursor:pointer;border-radius:8px;border:1px solid var(--bd);background:var(--card);color:var(--tx);padding:8px 12px}
+button.on,button.p{background:var(--ac);color:var(--ac2);border-color:var(--ac)}
+label{display:block;margin:10px 0 4px;color:var(--mut);font-size:.9rem}
+input,select{width:100%;font:inherit;padding:9px 10px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--tx)}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.row>button{flex:1}
+.err{color:var(--err)}
+.ok{color:var(--ac)}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%}
+td,th{text-align:left;padding:6px 8px;border-bottom:1px solid var(--bd);white-space:nowrap}
+th{color:var(--mut);font-weight:500}
+.note{font-size:.85rem;color:var(--mut)}
+</style>
+</head>
+<body>
+<main>
+<h1>RVJ Bank Management System</h1>
+<p class="sub">Data is saved in this browser only.</p>
+<div id="app"></div>
+</main>
+<script>
+var K='rvj_bank_v1',DB;
+function seed(){return{a:[
+{n:'18762228367',name:'Ryan',ph:'9181460665',em:'ry@gmail.com',ad:'Dom street',bal:10000,loan:'Yes'},
+{n:'20030496801',name:'Joel',ph:'9181405666',em:'jl@gmail.com',ad:'Oak street',bal:70000,loan:'Yes'},
+{n:'37153758551',name:'Jacob',ph:'9811460665',em:'ja@gmail.com',ad:'Polo street',bal:40000,loan:'Yes'},
+{n:'49911312621',name:'Vivek',ph:'9118460566',em:'vi@gmail.com',ad:'Peter street',bal:50000,loan:'No'},
+{n:'71606600584',name:'Rohit',ph:'8191460566',em:'ro@gmail.com',ad:'Chairman street',bal:20000,loan:'No'}],
+l:[
+{n:'18762228367',name:'Ryan',amt:300000,type:'HOME LOAN',st:'pending',m:2},
+{n:'20030496801',name:'Joel',amt:100000,type:'PERSONAL LOAN',st:'pending',m:4},
+{n:'37153758551',name:'Jacob',amt:400000,type:'PERSONAL LOAN',st:'pending',m:4},
+{n:'49911312621',name:'Vivek',amt:70000,type:'EDUCATION LOAN',st:'cleared',m:0},
+{n:'71606600584',name:'Rohit',amt:800000,type:'VEHICLE LOAN',st:'pending',m:3}]}}
+function load(){try{DB=JSON.parse(localStorage.getItem(K))}catch(e){DB=null}if(!DB||!DB.a)DB=seed()}
+function save(){try{localStorage.setItem(K,JSON.stringify(DB))}catch(e){}}
+function esc(s){return String(s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function acc(n){return DB.a.find(function(x){return x.n===String(n).trim()})}
+function loan(n){return DB.l.find(function(x){return x.n===String(n).trim()})}
+function kv(o){return '<div class="scroll"><table>'+o.map(function(r){return '<tr><th>'+r[0]+'</th><td>'+esc(r[1])+'</td></tr>'}).join('')+'</table></div>'}
+function bad(m){return '<span class="err">'+m+'</span>'}
+function good(m){return '<span class="ok">'+m+'</span>'}
+var AC=['Account no','acct'],YN=['Loan taken','loan','sel',['Yes','No']];
+var TABS={
+view:{t:'View account',f:[AC],run:function(v){var a=acc(v.acct);if(!a)return bad('Account not found');return kv([['Account number',a.n],['Name',a.name],['Phone',a.ph],['Email',a.em],['Address',a.ad],['Balance',a.bal],['Loan taken',a.loan]])}},
+lstat:{t:'Loan status',f:[AC],run:function(v){var l=loan(v.acct);if(!l)return bad('No loan record');return kv([['Account number',l.n],['Name',l.name],['Loan amount',l.amt],['Type',l.type],['Status',l.st],['Months interest unpaid',l.m]])}},
+name:{t:'Change name',f:[AC,['New name','val']],run:function(v){var a=acc(v.acct);if(!a)return bad('Account not found');if(!v.val.trim())return bad('Name required');a.name=v.val.trim();var l=loan(a.n);if(l)l.name=a.name;save();return good('Name updated')}},
+email:{t:'Change email',f:[AC,['New email','val','email']],run:function(v){var a=acc(v.acct);if(!a)return bad('Account not found');if(!/^\S+@\S+\.\S+$/.test(v.val))return bad('Invalid email');a.em=v.val.trim();save();return good('Email updated')}},
+phone:{t:'Change phone',f:[AC,['New phone','val','tel']],run:function(v){var a=acc(v.acct);if(!a)return bad('Account not found');if(!/^\d{7,15}$/.test(v.val))return bad('Phone must be 7-15 digits');a.ph=v.val.trim();save();return good('Phone updated')}},
+add:{t:'Add account',f:[['Name','name'],['Phone','ph','tel'],['Email','em','email'],['Address','ad'],['Balance','bal','number'],YN],run:function(v){if(!v.name.trim()||!/^\d{7,15}$/.test(v.ph)||!/^\S+@\S+\.\S+$/.test(v.em)||v.bal===''||+v.bal<0)return bad('Fill all fields correctly');var n;do{n=String(Math.floor(Math.random()*1e11)).padStart(11,'1')}while(acc(n));DB.a.push({n:n,name:v.name.trim(),ph:v.ph,em:v.em.trim(),ad:v.ad.trim(),bal:+v.bal,loan:v.loan});save();return good('Account added. Number: '+n)}},
+ustat:{t:'Update loan status',f:[AC,['Status','st','sel',['pending','cleared']]],run:function(v){var l=loan(v.acct);if(!l)return bad('No loan record');l.st=v.st;if(v.st==='cleared')l.m=0;save();return good('Loan updated')}},
+def:{t:'Loan defaulters',f:[],run:function(){var d=DB.l.filter(function(x){return x.st==='pending'});if(!d.length)return 'No defaulters';return '<div class="scroll"><table><tr><th>Account</th><th>Name</th><th>Status</th><th>Months unpaid</th></tr>'+d.map(function(x){return '<tr><td>'+esc(x.n)+'</td><td>'+esc(x.name)+'</td><td>'+esc(x.st)+'</td><td>'+x.m+'</td></tr>'}).join('')+'</table></div>'}},
+nloan:{t:'New loan',f:[AC,['Amount','amt','number'],['Type','type','sel',['HOME LOAN','VEHICLE LOAN','PERSONAL LOAN','EDUCATION LOAN']],['Status','st','sel',['pending','cleared']],['Months interest unpaid','m','number']],run:function(v){var a=acc(v.acct);if(!a)return bad('Account not found');if(loan(a.n))return bad('Loan already exists');if(!(+v.amt>0)||v.m===''||+v.m<0)return bad('Enter valid amount and months');DB.l.push({n:a.n,name:a.name,amt:+v.amt,type:v.type,st:v.st,m:+v.m});a.loan='Yes';save();return good('Loan added')}},
+del:{t:'Delete account',f:[AC],run:function(v){var a=acc(v.acct);if(!a)return bad('Account not found');if(!confirm('Delete account '+a.n+'?'))return 'Cancelled';DB.a=DB.a.filter(function(x){return x!==a});DB.l=DB.l.filter(function(x){return x.n!==a.n});save();return good('Account deleted')}}
+};
+var ROLES={user:['view','name','email','phone','lstat'],admin:['add','view','ustat','def','nloan','del']};
+var role=null,tab=null,msg='';
+function render(){
+var h='';
+if(!role){
+h='<div class="card"><p>Choose a menu</p><div class="row"><button class="p" onclick="pick(\'user\')">User menu</button><button class="p" onclick="pick(\'admin\')">Admin menu</button></div></div>'+
+'<p class="note">Admin password: bank@123 (client-side only, not real security). <a href="#" onclick="resetDB();return false">Reset demo data</a></p>';
+}else{
+h='<div class="row" style="margin-bottom:12px"><button onclick="out()">&larr; Exit</button></div><div class="tabs">'+ROLES[role].map(function(k){return '<button class="'+(k===tab?'on':'')+'" onclick="go(\''+k+'\')">'+TABS[k].t+'</button>'}).join('')+'</div>';
+var T=TABS[tab];
+h+='<div class="card"><strong>'+T.t+'</strong>'+T.f.map(function(f,i){
+var id='f'+i;
+if(f[2]==='sel')return '<label for="'+id+'">'+f[0]+'</label><select id="'+id+'">'+f[3].map(function(o){return '<option>'+o+'</option>'}).join('')+'</select>';
+return '<label for="'+id+'">'+f[0]+'</label><input id="'+id+'" type="'+(f[2]||'text')+'" autocomplete="off">'}).join('')+
+'<div class="row" style="margin-top:14px"><button class="p" onclick="run()">'+(T.f.length?'Submit':'Show')+'</button></div><div id="out" style="margin-top:14px"></div></div>';
+}
+document.getElementById('app').innerHTML=h;
+}
+function pick(r){if(r==='admin'){var p=prompt('Enter the password');if(p!=='bank@123'){if(p!==null)alert('Wrong password');return}}role=r;tab=ROLES[r][0];render()}
+function out(){role=null;render()}
+function go(k){tab=k;render()}
+function run(){var T=TABS[tab],v={};T.f.forEach(function(f,i){v[f[1]]=document.getElementById('f'+i).value});var o=document.getElementById('out');o.innerHTML=T.run(v);if(o.textContent.indexOf('updated')>-1||o.textContent.indexOf('added')>-1)T.f.forEach(function(f,i){var e=document.getElementById('f'+i);if(e.tagName==='INPUT')e.value=''})}
+function resetDB(){if(confirm('Reset all data to demo data?')){DB=seed();save();alert('Reset done')}}
+load();render();
+</script>
+</body>
+</html>
